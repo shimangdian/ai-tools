@@ -55,33 +55,58 @@ show_welcome() {
 check_docker() {
     print_info "检查 Docker 环境..."
 
-    if ! command -v docker &> /dev/null; then
-        print_error "未检测到 Docker，请先安装 Docker"
+    # 检查多个可能的 docker 路径（兼容群晖 NAS）
+    DOCKER_CMD=""
+    if command -v docker &> /dev/null; then
+        DOCKER_CMD="docker"
+    elif [ -f "/usr/local/bin/docker" ]; then
+        DOCKER_CMD="/usr/local/bin/docker"
+    elif [ -f "/usr/bin/docker" ]; then
+        DOCKER_CMD="/usr/bin/docker"
+    elif [ -f "/volume1/@appstore/ContainerManager/usr/bin/docker" ]; then
+        # 群晖 Container Manager 的路径
+        DOCKER_CMD="/volume1/@appstore/ContainerManager/usr/bin/docker"
+    else
+        print_error "未检测到 Docker 命令"
+        print_warning "群晖 NAS 用户：请确保已安装 Container Manager"
+        print_warning "请尝试在 Container Manager 中手动运行此项目"
         exit 1
     fi
 
-    if ! docker ps &> /dev/null; then
-        print_error "Docker 未运行或权限不足，请检查 Docker 服务"
+    # 测试 docker 命令是否可用
+    if ! $DOCKER_CMD ps &> /dev/null; then
+        print_error "Docker 未运行或权限不足"
+        print_warning "群晖 NAS 用户：请确保 Container Manager 正在运行"
+        print_warning "也可以尝试使用 sudo 运行此脚本"
         exit 1
     fi
 
-    print_success "Docker 环境检查通过"
+    # 导出 docker 命令供其他函数使用
+    export DOCKER_CMD
+    print_success "Docker 环境检查通过 (使用: $DOCKER_CMD)"
 }
 
 # 检查 Docker Compose 是否安装
 check_docker_compose() {
     print_info "检查 Docker Compose..."
 
-    if docker compose version &> /dev/null; then
-        DOCKER_COMPOSE="docker compose"
+    # 使用之前检测到的 docker 命令
+    if $DOCKER_CMD compose version &> /dev/null; then
+        DOCKER_COMPOSE="$DOCKER_CMD compose"
     elif command -v docker-compose &> /dev/null; then
         DOCKER_COMPOSE="docker-compose"
+    elif [ -f "/usr/local/bin/docker-compose" ]; then
+        DOCKER_COMPOSE="/usr/local/bin/docker-compose"
+    elif [ -f "/volume1/@appstore/ContainerManager/usr/bin/docker-compose" ]; then
+        # 群晖 Container Manager 的 docker-compose 路径
+        DOCKER_COMPOSE="/volume1/@appstore/ContainerManager/usr/bin/docker-compose"
     else
-        print_error "未检测到 Docker Compose，请先安装"
+        print_error "未检测到 Docker Compose"
+        print_warning "群晖 NAS 用户：请在 Container Manager 中手动导入 docker-compose.yml"
         exit 1
     fi
 
-    print_success "Docker Compose 检查通过"
+    print_success "Docker Compose 检查通过 (使用: $DOCKER_COMPOSE)"
 }
 
 # 创建必要的目录
