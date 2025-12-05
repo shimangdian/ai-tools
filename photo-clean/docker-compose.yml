@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: photo-clean-backend
+    restart: unless-stopped
+    volumes:
+      # 挂载照片目录（可读写，允许删除到回收站）
+      - ./photos:/data/photo
+      # 挂载回收站目录（可写）
+      - ./data/trash:/data/trash
+      # 挂载数据库目录
+      - ./data/db:/data/db
+    environment:
+      - PHOTO_DIR=/data/photo
+      - TRASH_DIR=/data/trash
+      - DB_PATH=/data/db/photo_clean.db
+      - SIMILARITY_THRESHOLD=10
+      - SCAN_WORKERS=4
+      - TRASH_RETENTION_DAYS=30
+    networks:
+      - photo-clean-network
+
+  frontend:
+    build: ./frontend
+    container_name: photo-clean-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - photo-clean-network
+
+networks:
+  photo-clean-network:
+    driver: bridge
+
+volumes:
+  trash:
+  db:
