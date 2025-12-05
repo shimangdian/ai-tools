@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     volumes:
       # 挂载照片目录（可读写，允许删除到回收站）
-      - ./photos:/data/photo
+      - /volume2/lv22t/照片:/data/photo
       # 挂载回收站目录（可写）
       - ./data/trash:/data/trash
       # 挂载数据库目录
