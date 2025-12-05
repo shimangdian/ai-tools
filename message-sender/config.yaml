@@ -1,0 +1,37 @@
+# Message Sender Service Configuration
+
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  # Optional API key for authentication (leave empty to disable)
+  api_key: ""
+
+# Message Senders Configuration
+senders:
+  # WeCom (Enterprise WeChat)
+  wecom:
+    enabled: true
+    webhook_url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_HERE"
+    # Optional: @ specific users
+    mentioned_list: []
+    # Optional: @ specific mobile numbers
+    mentioned_mobile_list: []
+
+  # DingTalk
+  dingtalk:
+    enabled: false
+    webhook_url: "https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN_HERE"
+    # Optional: Sign secret for security
+    secret: ""
+    # Optional: @ specific mobile numbers
+    at_mobiles: []
+    # Optional: @ all members
+    at_all: false
+
+  # Feishu (Lark)
+  feishu:
+    enabled: false
+    webhook_url: "https://open.feishu.cn/open-apis/bot/v2/hook/YOUR_HOOK_ID"
+    # Optional: Sign secret for security
+    secret: ""

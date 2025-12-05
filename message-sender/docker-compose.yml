@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  message-sender:
+    build: .
+    container_name: message-sender
+    ports:
+      - "8000:8000"
+    environment:
+      # API Configuration
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      # Uncomment and set your API key for authentication
+      # - API_KEY=your_secret_api_key_here
+
+      # WeCom Configuration
+      - WECOM_ENABLED=true
+      - WECOM_WEBHOOK_URL=${WECOM_WEBHOOK_URL}
+      # - WECOM_MENTIONED_LIST=user1,user2
+      # - WECOM_MENTIONED_MOBILE_LIST=13800138000,13900139000
+
+      # DingTalk Configuration (uncomment to enable)
+      # - DINGTALK_ENABLED=true
+      # - DINGTALK_WEBHOOK_URL=${DINGTALK_WEBHOOK_URL}
+      # - DINGTALK_SECRET=${DINGTALK_SECRET}
+      # - DINGTALK_AT_MOBILES=13800138000,13900139000
+      # - DINGTALK_AT_ALL=false
+
+      # Feishu Configuration (uncomment to enable)
+      # - FEISHU_ENABLED=true
+      # - FEISHU_WEBHOOK_URL=${FEISHU_WEBHOOK_URL}
+      # - FEISHU_SECRET=${FEISHU_SECRET}
+    volumes:
+      # Mount config file (optional, environment variables take precedence)
+      - ./config.yaml:/app/config.yaml
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

@@ -1,0 +1,24 @@
+# Daily News Service Configuration
+
+# News API Configuration
+news:
+  api_url: "https://dwz.2xb.cn/zaob"
+
+# Message Sender Service Configuration
+message_sender:
+  base_url: "http://localhost:8000"
+  api_key: ""  # Optional API key for authentication
+
+# Schedule Configuration
+schedule:
+  enabled: true
+  hour: 8  # Hour to run (0-23)
+  minute: 0  # Minute to run (0-59)
+  timezone: "Asia/Shanghai"
+
+# OCR Configuration
+ocr:
+  enabled: true  # Use OCR to extract text from images
+  max_image_side: 8000  # Maximum side length for images (default: 8000)
+  api_url: ""  # OCR API URL (optional, uses default if empty)
+  token: ""  # OCR API Token (optional, uses default if empty)

@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  daily-news:
+    build: .
+    container_name: daily-news
+    environment:
+      # News API Configuration
+      - NEWS_API_URL=https://dwz.2xb.cn/zaob
+
+      # Message Sender Service Configuration
+      - MESSAGE_SENDER_URL=http://message-sender:8000
+      # - MESSAGE_SENDER_API_KEY=${MESSAGE_SENDER_API_KEY}
+
+      # Schedule Configuration
+      - SCHEDULE_ENABLED=true
+      - SCHEDULE_HOUR=8
+      - SCHEDULE_MINUTE=0
+      - SCHEDULE_TIMEZONE=Asia/Shanghai
+    volumes:
+      # Mount config file (optional)
+      - ./config.yaml:/app/config.yaml
+      # Mount logs directory
+      - ./logs:/app/logs
+      # Mount app code for development (remove in production)
+      - ./app:/app/app
+    restart: unless-stopped
+    depends_on:
+      - message-sender
+    networks:
+      - daily-news-network
+
+  message-sender:
+    image: message-sender:latest
+    container_name: message-sender
+    ports:
+      - "8000:8000"
+    environment:
+      - WECOM_ENABLED=true
+      - WECOM_WEBHOOK_URL=${WECOM_WEBHOOK_URL}
+    restart: unless-stopped
+    networks:
+      - daily-news-network
+
+networks:
+  daily-news-network:
+    driver: bridge
