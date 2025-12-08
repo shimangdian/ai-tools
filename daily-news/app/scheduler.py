@@ -76,47 +76,36 @@ class DailyNewsScheduler:
                     if ocr_text and len(ocr_text.strip()) > 10:
                         logger.info(f"OCR extracted {len(ocr_text)} characters")
 
-                        # Print OCR result instead of sending
-                        print("\n" + "="*80)
-                        print("OCR Recognition Result:")
-                        print("="*80)
-                        print(ocr_text)
-                        print("="*80 + "\n")
+                        # Create text message from OCR result
+                        title, content = self.message_sender.create_text_message_from_ocr(ocr_text)
 
-                        logger.info("OCR text printed, message sending disabled")
-                        return
+                        # Send as text message
+                        result = await self.message_sender.send_message(
+                            title=title,
+                            content=content,
+                            message_type="text",
+                            sender_type="wecom"
+                        )
 
-                        # # Create text message from OCR result
-                        # title, content = self.message_sender.create_text_message_from_ocr(ocr_text)
-
-                        # # Send as text message
-                        # result = await self.message_sender.send_message(
-                        #     title=title,
-                        #     content=content,
-                        #     message_type="text",
-                        #     sender_type="wecom"
-                        # )
-
-                        # if result.get("success"):
-                        #     logger.info("Daily news sent successfully via OCR text")
-                        #     return
-                        # else:
-                        #     logger.warning(f"Failed to send OCR text: {result.get('error')}")
+                        if result.get("success"):
+                            logger.info("Daily news sent successfully via OCR text")
+                            return
+                        else:
+                            logger.warning(f"Failed to send OCR text: {result.get('error')}")
                     else:
                         logger.warning("OCR result is empty or too short, falling back to image")
 
                 except Exception as e:
                     logger.error(f"OCR failed: {str(e)}, falling back to image")
 
-            # Fallback: Send with image URL (markdown_v2) - DISABLED FOR TESTING
-            logger.info("Message sending disabled, only printing OCR results")
-            # logger.info("Sending news with image URL (markdown_v2)")
-            # result = await self.message_sender.send_daily_news(image_url)
+            # Fallback: Send with image URL (markdown_v2)
+            logger.info("Sending news with image URL (markdown_v2)")
+            result = await self.message_sender.send_daily_news(image_url)
 
-            # if result.get("success"):
-            #     logger.info("Daily news sent successfully")
-            # else:
-            #     logger.error(f"Failed to send daily news: {result.get('error')}")
+            if result.get("success"):
+                logger.info("Daily news sent successfully")
+            else:
+                logger.error(f"Failed to send daily news: {result.get('error')}")
 
         except Exception as e:
             logger.error(f"Error in daily news task: {str(e)}", exc_info=True)

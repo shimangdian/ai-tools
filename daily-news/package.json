@@ -1,0 +1,15 @@
+{
+  "name": "daily-news-ocr",
+  "version": "1.0.0",
+  "description": "OCR service using Tesseract.js for daily news",
+  "main": "ocr_service.js",
+  "scripts": {
+    "test": "node ocr_service.js"
+  },
+  "keywords": ["ocr", "tesseract", "image-recognition"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "tesseract.js": "^5.1.1"
+  }
+}
