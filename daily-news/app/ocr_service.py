@@ -44,7 +44,9 @@ class OCRService:
         # First, replace all newlines with spaces to flatten the text
         text = text.replace('\n', ' ')
 
-        # Remove excessive spaces between Chinese characters
+        # Remove ALL spaces between Chinese characters
+        text = re.sub(r'([\u4e00-\u9fff])\s+([\u4e00-\u9fff])', r'\1\2', text)
+        # Apply again to catch multiple spaces
         text = re.sub(r'([\u4e00-\u9fff])\s+([\u4e00-\u9fff])', r'\1\2', text)
 
         # Keep single space between Chinese and English/numbers
@@ -52,8 +54,10 @@ class OCRService:
         text = re.sub(r'([a-zA-Z0-9])\s+([\u4e00-\u9fff])', r'\1 \2', text)
 
         # Remove spaces around punctuation
-        text = re.sub(r'\s+([,，.。;；:：!！?？、])\s+', r'\1', text)
-        text = re.sub(r'\s+([,，.。;；:：!！?？、])', r'\1', text)
+        text = re.sub(r'\s+([,，.。;；:：!！?？、])\s*', r'\1', text)
+
+        # Remove spaces before numbers with 顿号
+        text = re.sub(r'\s+(\d+、)', r'\1', text)
 
         # Normalize multiple spaces to single space
         text = re.sub(r' {2,}', ' ', text)
@@ -62,25 +66,22 @@ class OCRService:
         # Match the entire title line including date and greeting
         text = re.sub(r'(【每天[^】]*读世界[^】]*】[^1]*?[!！])\s*', r'\1\n\n', text)
 
-        # Add line break before the first news item (1、) if not already added
-        text = re.sub(r'([!！])\s*(1、)', r'\1\n\2', text)
+        # IMPORTANT: Add double line break before EVERY number+顿号 (数字、)
+        # This creates a blank line before each news item, regardless of what comes before
+        # We need to exclude the first news item (1、) if it's right after the title
+        text = re.sub(r'([^!！\n])(\d+、)', r'\1\n\n\2', text)
 
-        # Add double line break after semicolon followed by number with 顿号
-        # This creates a blank line between news items
-        # Match patterns like: ";数字、" or "；数字、"
-        text = re.sub(r'([;；])\s*(\d+、)', r'\1\n\n\2', text)
+        # Fix the first news item if it needs a line break after the title
+        text = re.sub(r'([!！])(\d+、)', r'\1\n\n\2', text)
 
         # Add double line break before 【每日微语】
-        text = re.sub(r'([;；。])\s*(【每日微语】)', r'\1\n\n\2', text)
+        text = re.sub(r'([^、\n])(【每日微语】)', r'\1\n\n\2', text)
 
         # Remove spaces at the beginning of lines
         text = re.sub(r'^\s+', '', text, flags=re.MULTILINE)
 
         # Remove trailing spaces
         text = re.sub(r'\s+$', '', text, flags=re.MULTILINE)
-
-        # Ensure no more than 2 consecutive newlines (1 blank line)
-        text = re.sub(r'\n{3,}', '\n\n', text)
 
         return text.strip()
 

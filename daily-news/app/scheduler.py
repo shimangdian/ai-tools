@@ -63,7 +63,7 @@ class DailyNewsScheduler:
 
             if not image_url:
                 logger.error("Failed to fetch daily news image URL")
-                return
+                raise Exception("Failed to fetch daily news image URL")
 
             logger.info(f"Fetched news image URL: {image_url}")
 
@@ -91,7 +91,9 @@ class DailyNewsScheduler:
                             logger.info("Daily news sent successfully via OCR text")
                             return
                         else:
-                            logger.warning(f"Failed to send OCR text: {result.get('error')}")
+                            error_msg = result.get('error', 'Unknown error')
+                            logger.warning(f"Failed to send OCR text: {error_msg}")
+                            # Don't raise here, try image fallback
                     else:
                         logger.warning("OCR result is empty or too short, falling back to image")
 
@@ -105,10 +107,13 @@ class DailyNewsScheduler:
             if result.get("success"):
                 logger.info("Daily news sent successfully")
             else:
-                logger.error(f"Failed to send daily news: {result.get('error')}")
+                error_msg = result.get('error', 'Unknown error')
+                logger.error(f"Failed to send daily news: {error_msg}")
+                raise Exception(f"Failed to send daily news: {error_msg}")
 
         except Exception as e:
             logger.error(f"Error in daily news task: {str(e)}", exc_info=True)
+            raise  # Re-raise to let caller know it failed
 
     def schedule_daily_task(self, hour: int = 8, minute: int = 0):
         """

@@ -1,6 +1,7 @@
 """Web API for Daily News Service"""
 import asyncio
 import logging
+import sys
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException
@@ -13,7 +14,50 @@ from .news_fetcher import NewsFetcher
 from .message_sender import MessageSender
 from .scheduler import DailyNewsScheduler
 
+# Setup logging to file
+log_dir = Path("/app/logs")
+if not log_dir.exists():
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+
+log_file = log_dir / "daily_news.log"
+
+# Get root logger and configure it
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# Remove existing handlers to avoid duplicates
+for handler in root_logger.handlers[:]:
+    root_logger.removeHandler(handler)
+
+# Add stdout handler
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+stdout_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+stdout_handler.setFormatter(stdout_formatter)
+root_logger.addHandler(stdout_handler)
+
+# Add file handler with immediate flush
+file_handler = logging.FileHandler(log_file, mode='a')
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(stdout_formatter)
+root_logger.addHandler(file_handler)
+
+# Force flush after every log
+class FlushFileHandler(logging.FileHandler):
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
+
+# Replace file handler with flush handler
+root_logger.removeHandler(file_handler)
+flush_handler = FlushFileHandler(log_file, mode='a')
+flush_handler.setLevel(logging.INFO)
+flush_handler.setFormatter(stdout_formatter)
+root_logger.addHandler(flush_handler)
+
 logger = logging.getLogger(__name__)
+logger.info(f"Web API starting, logging to {log_file}")
 
 # Create FastAPI app
 app = FastAPI(title="Daily News Service", version="1.0.0")
@@ -319,54 +363,8 @@ async def root():
             opacity: 0.9;
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📰 Daily News Service</h1>
-            <p>手动推送每日新闻 & 查看服务日志</p>
-        </div>
-
-        <div class="card">
-            <h2>🚀 手动推送</h2>
-            <div class="button-group">
-                <button id="triggerBtn" class="btn-primary" onclick="triggerNews()">
-                    立即推送新闻
-                </button>
-                <button id="healthBtn" class="btn-success" onclick="checkHealth()">
-                    检查服务状态
-                </button>
-            </div>
-            <div id="statusBox" style="display: none;"></div>
-        </div>
-
-        <div class="card">
-            <h2>📊 服务日志</h2>
-            <div class="button-group">
-                <button class="btn-secondary" onclick="loadLogs()">
-                    刷新日志
-                </button>
-                <button class="btn-secondary" onclick="clearLogDisplay()">
-                    清空显示
-                </button>
-            </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-value" id="logLines">0</div>
-                    <div class="stat-label">日志行数</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="lastUpdate">-</div>
-                    <div class="stat-label">最后更新</div>
-                </div>
-            </div>
-            <div id="logContainer" class="log-container">
-                点击"刷新日志"查看最新日志...
-            </div>
-        </div>
-    </div>
-
     <script>
+        // Define all functions before DOM loads
         function showStatus(message, type) {
             const statusBox = document.getElementById('statusBox');
             statusBox.className = 'status-box status-' + type;
@@ -464,7 +462,7 @@ async def root():
 
                 if (data.logs) {
                     const formattedLogs = data.logs
-                        .split('\n')
+                        .split('\\n')
                         .map(line => formatLogLine(line))
                         .join('');
 
@@ -497,6 +495,52 @@ async def root():
             setInterval(() => loadLogs(), 30000);
         });
     </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📰 Daily News Service</h1>
+            <p>手动推送每日新闻 & 查看服务日志</p>
+        </div>
+
+        <div class="card">
+            <h2>🚀 手动推送</h2>
+            <div class="button-group">
+                <button id="triggerBtn" class="btn-primary" onclick="triggerNews()">
+                    立即推送新闻
+                </button>
+                <button id="healthBtn" class="btn-success" onclick="checkHealth()">
+                    检查服务状态
+                </button>
+            </div>
+            <div id="statusBox" style="display: none;"></div>
+        </div>
+
+        <div class="card">
+            <h2>📊 服务日志</h2>
+            <div class="button-group">
+                <button class="btn-secondary" onclick="loadLogs()">
+                    刷新日志
+                </button>
+                <button class="btn-secondary" onclick="clearLogDisplay()">
+                    清空显示
+                </button>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="logLines">0</div>
+                    <div class="stat-label">日志行数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="lastUpdate">-</div>
+                    <div class="stat-label">最后更新</div>
+                </div>
+            </div>
+            <div id="logContainer" class="log-container">
+                点击"刷新日志"查看最新日志...
+            </div>
+        </div>
+    </div>
 </body>
 </html>
     """
@@ -563,21 +607,23 @@ async def get_logs(lines: int = 100):
         if not log_file.exists():
             log_file = Path("logs/daily_news.log")
 
-        if not log_file.exists():
+        if log_file.exists() and log_file.stat().st_size > 0:
+            # Read last N lines
+            with open(log_file, 'r', encoding='utf-8') as f:
+                all_lines = f.readlines()
+                last_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+
             return LogResponse(
-                logs="日志文件不存在",
-                total_lines=0
+                logs=''.join(last_lines),
+                total_lines=len(last_lines)
             )
 
-        # Read last N lines
-        with open(log_file, 'r', encoding='utf-8') as f:
-            all_lines = f.readlines()
-            last_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
-
+        # If no logs available
         return LogResponse(
-            logs=''.join(last_lines),
-            total_lines=len(last_lines)
+            logs="暂无日志（请触发一次推送以生成日志）",
+            total_lines=0
         )
+
     except Exception as e:
         logger.error(f"Failed to read logs: {str(e)}")
         raise HTTPException(status_code=500, detail=f"读取日志失败: {str(e)}")
