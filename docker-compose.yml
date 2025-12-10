@@ -46,6 +46,8 @@ services:
   daily-news:
     build: ./daily-news
     container_name: daily-news
+    ports:
+      - "8001:8001"
     environment:
       # News API Configuration
       - NEWS_API_URL=https://dwz.2xb.cn/zaob

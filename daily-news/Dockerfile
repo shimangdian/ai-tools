@@ -29,5 +29,8 @@ COPY config.yaml .
 # Create log directory
 RUN mkdir -p /app/logs
 
-# Run the application
-CMD ["python", "-m", "app.main"]
+# Expose web interface port
+EXPOSE 8001
+
+# Run the web API application
+CMD ["uvicorn", "app.web_api:app", "--host", "0.0.0.0", "--port", "8001"]

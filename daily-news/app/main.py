@@ -3,6 +3,7 @@ import asyncio
 import logging
 import signal
 import sys
+from pathlib import Path
 from typing import Optional
 
 from .config import load_config
@@ -10,13 +11,21 @@ from .news_fetcher import NewsFetcher
 from .message_sender import MessageSender
 from .scheduler import DailyNewsScheduler
 
+# Ensure logs directory exists
+log_dir = Path("/app/logs")
+if not log_dir.exists():
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+
+log_file = log_dir / "daily_news.log"
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('daily_news.log')
+        logging.FileHandler(log_file)
     ]
 )
 

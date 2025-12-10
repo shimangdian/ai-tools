@@ -6,6 +6,7 @@
 
 ✅ **message-sender** - healthy, 运行在 http://localhost:8000
 ✅ **daily-news** - running, 已连接到 message-sender
+🌐 **daily-news Web 界面** - 运行在 http://localhost:8001
 
 ## 快速开始
 
@@ -85,9 +86,28 @@ vi .env
 
 ## 服务端点
 
-- **Message Sender API**: http://localhost:8000
+### Message Sender
+- **API**: http://localhost:8000
 - **API 文档**: http://localhost:8000/docs
 - **健康检查**: http://localhost:8000/health
+
+### Daily News
+- **Web 界面**: http://localhost:8001
+- **健康检查**: http://localhost:8001/api/health
+- **手动推送**: http://localhost:8001/api/trigger
+- **查看日志**: http://localhost:8001/api/logs
+
+## Web 界面功能
+
+Daily News 服务现在包含一个 Web 界面，可以通过浏览器访问 http://localhost:8001
+
+功能包括：
+- 📤 **手动推送新闻**: 点击按钮即可立即推送每日新闻
+- 🔍 **查看服务状态**: 检查调度器、OCR 服务状态和下次运行时间
+- 📊 **实时日志查看**: 自动刷新的日志显示，链接可点击
+- 🎨 **彩色日志**: 错误、警告和信息消息使用不同颜色标记
+
+详细文档请参考: [daily-news/WEB_INTERFACE.md](daily-news/WEB_INTERFACE.md)
 
 ## 测试消息发送
 
